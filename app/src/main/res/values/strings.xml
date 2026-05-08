@@ -42,7 +42,7 @@
     <string name="prev_day">Previous day</string>
     <string name="next_day">Next day</string>
 
-    <string name="empty_meds">No medications yet — tap + to add one.</string>
+    <string name="empty_meds">No medications here — click settings cog to manage medications.</string>
 
     <string name="title_add_med">Add medication</string>
     <string name="title_edit_med">Edit medication</string>
@@ -58,7 +58,7 @@
     <string name="add_med">Add medication</string>
     <string name="add_new">Add new</string>
     <string name="manage_meds">Medications</string>
-    <string name="empty_meds_manage">No medications here. Click settings cog to manage medications.</string>
+    <string name="empty_meds_manage">No medications here.</string>
 
     <string name="notif_corrupt_title">PillPup data error</string>
     <string name="notif_corrupt_text">Couldn\'t read your %1$s data. Open PillPup.</string>
