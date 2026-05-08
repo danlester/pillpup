@@ -12,12 +12,17 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_MY_PACKAGE_REPLACED,
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED -> {
-                ReminderScheduler.rescheduleAll(context)
-                Engine.checkAndNotify(context)
-                if (intent.action == Intent.ACTION_TIMEZONE_CHANGED) {
-                    val meds = MedStore(context).list()
-                    val backlog = HistoryStore(context).computeBacklog(meds, Days.today())
-                    Notifications.postBacklogReview(context, backlog.count)
+                try {
+                    ReminderScheduler.rescheduleAll(context)
+                    Engine.checkAndNotify(context)
+                    if (intent.action == Intent.ACTION_TIMEZONE_CHANGED) {
+                        val meds = MedStore(context).list()
+                        val backlog = HistoryStore(context).computeBacklog(meds, Days.today())
+                        Notifications.postBacklogReview(context, backlog.count)
+                    }
+                } catch (e: org.json.JSONException) {
+                    // DataHealth has fired the corruption notification; don't crash boot.
+                    android.util.Log.e("BootReceiver", "skipped ${intent.action}: data corrupt", e)
                 }
             }
         }

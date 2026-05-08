@@ -37,10 +37,10 @@ without manual intervention.
   `TIME_SET`, `TIMEZONE_CHANGED` and calls `ReminderScheduler.rescheduleAll`
   + `Engine.checkAndNotify`. Don't drop these.
 - **History is a JSON blob in SharedPreferences**
-  (`{ day: { medId: { at, status } } }`). Same pattern as bttame's
-  `DeviceStore`. Skipped is recorded explicitly. "Missed" = absence of a
-  record on a past day, computed live; **treated as backlog, not a
-  terminal display state**. Past-day untaken rows are interactive (slide +
+  (`{ day: { medId: { at, status } } }`). Skipped is recorded explicitly.
+  "Missed" = absence of a record on a past day, computed live; **treated
+  as backlog, not a terminal display state**. Past-day untaken rows are
+  interactive (slide +
   Skip) so the user can resolve them retroactively. `MainActivity` shows
   a red banner above the list with the unresolved count
   (`HistoryStore.computeBacklog`); tap → jump to the most-recent
@@ -59,9 +59,31 @@ without manual intervention.
 - **`createdDay` per med.** Filters meds out of past-day views so newly-
   added meds don't appear retroactively. Today's view shows them
   immediately even if their scheduled time was earlier today.
-- **Plain views + ViewBinding, no Compose / Hilt / Room.** Same posture as
-  bttame — small enough that the build environment is the hard part, not
-  the code.
+- **Plain views + ViewBinding, no Compose / Hilt / Room.** Small enough
+  that the build environment is the hard part, not the code.
+- **Auto Backup is on, governed by `res/xml/data_extraction_rules.xml`.**
+  The single `pillpup.xml` SharedPreferences file (meds + history +
+  transient engine state) is included in both `cloud-backup` and
+  `device-transfer`. Transient keys (`dueSince`, `dueSinceDay`,
+  `snoozeStartedAt`, `snoozeUntil`) ride along but self-heal: the engine
+  clears them on day rollover and `PillpupApp.onCreate` re-arms alarms via
+  `rescheduleAll`. Don't switch back to `allowBackup="false"` without
+  thinking — losing the user's med history on phone replacement is a real
+  cost. Health data note: medication names live in the user's Google
+  account (encrypted), accepted trade.
+- **Fail loud on corrupt blobs, never silently reset.** `DataHealth` is a
+  process-wide singleton. The three stores (`MedStore`, `HistoryStore`,
+  `ReminderState`) call `DataHealth.markCorrupt(ctx, blob, e)` on
+  `JSONException` and rethrow; `markCorrupt` is idempotent (posts a
+  HIGH-priority error notification once). Save methods check
+  `DataHealth.isCorrupt()` and refuse to write so the bad blob is
+  preserved on disk for inspection. `PillpupApp.onCreate`,
+  `BootReceiver`, and `ReminderReceiver` all wrap their store-touching
+  paths in `try/catch (JSONException)` so a corrupt blob doesn't crash
+  the process before the user sees the error. `MainActivity.onResume`
+  shows a non-cancelable AlertDialog with the blob name + parser message.
+  Don't replace this with an empty-default fallback — silently nuking the
+  user's data is the failure mode this design exists to prevent.
 - **`minSdk = 31`.** `POST_NOTIFICATIONS` runtime permission was
   introduced in Android 13 (API 33), but we still target Pixel-class
   devices. Don't lower minSdk without re-checking the permission story.
@@ -105,6 +127,11 @@ without manual intervention.
   check both.
 - `AndroidManifest.xml` — only `POST_NOTIFICATIONS` and
   `RECEIVE_BOOT_COMPLETED` declared. No exact-alarm, no foreground-service.
+  `allowBackup="true"` + `dataExtractionRules="@xml/data_extraction_rules"`.
+- `DataHealth.kt` — singleton corruption flag + idempotent
+  `markCorrupt`/notification. Stores call it on parse failure.
+- `res/xml/data_extraction_rules.xml` — Auto Backup / device-transfer
+  policy. Currently includes the whole `pillpup.xml` shared pref.
 - `.github/workflows/build.yml` — CI builds release APK (unsigned),
   regenerates wrapper jar each run.
 

@@ -7,6 +7,16 @@ import android.content.Intent
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val app = context.applicationContext
+        try {
+            handle(app, intent)
+        } catch (e: org.json.JSONException) {
+            // DataHealth.markCorrupt has fired the user-facing notification.
+            // Swallow so the receiver doesn't crash the process.
+            android.util.Log.e("ReminderReceiver", "skipped ${intent.action}: data corrupt", e)
+        }
+    }
+
+    private fun handle(app: Context, intent: Intent) {
         when (intent.action) {
             ACTION_MED_DUE -> {
                 val medId = intent.getStringExtra(EXTRA_MED_ID) ?: return

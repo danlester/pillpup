@@ -1,6 +1,7 @@
 package com.ideonate.pillpup
 
 import android.content.Context
+import org.json.JSONException
 import org.json.JSONObject
 
 /**
@@ -13,7 +14,8 @@ import org.json.JSONObject
 data class BacklogResult(val count: Int, val mostRecentDay: String?)
 
 class HistoryStore(ctx: Context) {
-    private val prefs = ctx.applicationContext.getSharedPreferences("pillpup", Context.MODE_PRIVATE)
+    private val app = ctx.applicationContext
+    private val prefs = app.getSharedPreferences("pillpup", Context.MODE_PRIVATE)
 
     fun get(day: String, medId: String): DoseRecord? {
         val root = root()
@@ -115,11 +117,19 @@ class HistoryStore(ctx: Context) {
 
     private fun root(): JSONObject {
         val s = prefs.getString(KEY_HISTORY, "{}") ?: "{}"
-        return JSONObject(s)
+        return try {
+            JSONObject(s)
+        } catch (e: JSONException) {
+            DataHealth.markCorrupt(app, "history", e)
+            throw e
+        }
     }
 
     private fun save(root: JSONObject) {
-        prefs.edit().putString(KEY_HISTORY, root.toString()).apply()
+        // Refuse to overwrite a corrupt blob; preserve it for inspection.
+        if (DataHealth.isCorrupt()) return
+        // commit(): dose take/skip/undo is the data we least want to lose.
+        prefs.edit().putString(KEY_HISTORY, root.toString()).commit()
     }
 
     companion object {

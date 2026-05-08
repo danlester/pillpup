@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Auto Backup / device-transfer policy for PillPup.
+
+    We back up the single SharedPreferences file ("pillpup.xml") that holds
+    everything: meds, history, plus a few transient engine keys (dueSince,
+    dueSinceDay, snoozeStartedAt, snoozeUntil).
+
+    The transient keys are restored too, but they self-heal on the next day
+    rollover (Engine.checkAndNotify clears them) and PillpupApp.onCreate
+    re-arms alarms via ReminderScheduler.rescheduleAll, so a freshly-restored
+    install settles within a day. Not worth the per-key exclude complexity.
+
+    Health data note: medication names + history end up in the user's Google
+    account (encrypted in transit and at rest). Acceptable trade for not
+    losing the data on phone replacement.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="pillpup.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="pillpup.xml" />
+    </device-transfer>
+</data-extraction-rules>

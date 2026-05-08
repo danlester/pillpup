@@ -22,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: MedDayAdapter
     private var currentDay: String = Days.today()
+    private var corruptDialog: AlertDialog? = null
 
     private val notifPermLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -82,11 +83,47 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (DataHealth.isCorrupt()) {
+            showCorruptionDialog()
+            return
+        }
         Notifications.cancel(this)
         // Snap back to today if a day rolled over while we were away.
         if (currentDay > Days.today()) currentDay = Days.today()
-        refresh()
-        Engine.checkAndNotify(this)
+        try {
+            refresh()
+            Engine.checkAndNotify(this)
+        } catch (e: org.json.JSONException) {
+            // DataHealth.markCorrupt has been called inside the failing store.
+            showCorruptionDialog()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        corruptDialog?.dismiss()
+        corruptDialog = null
+    }
+
+    private fun showCorruptionDialog() {
+        if (corruptDialog?.isShowing == true) return
+        val c = DataHealth.corruption ?: return
+        // Hide stale UI so the user isn't tempted to interact with it.
+        adapter.submit(emptyList())
+        binding.backlogBanner.visibility = android.view.View.GONE
+        binding.empty.visibility = android.view.View.GONE
+        val msg = getString(R.string.corrupt_dialog_msg, c.blob, c.message)
+        corruptDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.corrupt_dialog_title)
+            .setMessage(msg)
+            .setCancelable(false)
+            .setPositiveButton(R.string.corrupt_copy) { _, _ ->
+                val cm = getSystemService(android.content.ClipboardManager::class.java)
+                cm?.setPrimaryClip(android.content.ClipData.newPlainText("PillPup error", msg))
+                showCorruptionDialog()
+            }
+            .setNegativeButton(R.string.corrupt_quit) { _, _ -> finish() }
+            .show()
     }
 
     private fun refresh() {

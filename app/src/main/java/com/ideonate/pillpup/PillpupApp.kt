@@ -28,7 +28,15 @@ class PillpupApp : Application() {
             override fun onActivityDestroyed(a: Activity) {}
         })
         // Best-effort: re-arm alarms whenever the process spins up.
-        ReminderScheduler.rescheduleAll(this)
+        // Wrapped because rescheduleAll reads MedStore — if the blob is corrupt
+        // we want DataHealth to flag it (and post a notification) rather than
+        // crash the process before MainActivity can show the error UI.
+        try {
+            ReminderScheduler.rescheduleAll(this)
+        } catch (e: org.json.JSONException) {
+            // DataHealth.markCorrupt has already fired the notification.
+            android.util.Log.e("PillpupApp", "rescheduleAll skipped: data corrupt", e)
+        }
     }
 
     companion object {

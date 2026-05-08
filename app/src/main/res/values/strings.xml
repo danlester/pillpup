@@ -58,4 +58,12 @@
     <string name="add_new">Add new</string>
     <string name="manage_meds">Medications</string>
     <string name="empty_meds_manage">No medications here. Click settings cog to manage medications.</string>
+
+    <string name="notif_corrupt_title">PillPup data error</string>
+    <string name="notif_corrupt_text">Couldn\'t read your %1$s data. Open PillPup.</string>
+    <string name="notif_corrupt_bigtext">PillPup couldn\'t read its %1$s data: %2$s\n\nReminders are paused. Open the app for details.</string>
+    <string name="corrupt_dialog_title">Data error</string>
+    <string name="corrupt_dialog_msg">PillPup couldn\'t read its %1$s data:\n\n%2$s\n\nReminders are paused and writes are disabled to avoid making things worse. Tap Copy details to share the message, then quit and contact support.</string>
+    <string name="corrupt_copy">Copy details</string>
+    <string name="corrupt_quit">Quit</string>
 </resources>

@@ -2,15 +2,22 @@ package com.ideonate.pillpup
 
 import android.content.Context
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.util.UUID
 
 class MedStore(ctx: Context) {
-    private val prefs = ctx.applicationContext.getSharedPreferences("pillpup", Context.MODE_PRIVATE)
+    private val app = ctx.applicationContext
+    private val prefs = app.getSharedPreferences("pillpup", Context.MODE_PRIVATE)
 
     fun list(): List<Med> {
         val s = prefs.getString(KEY_MEDS, "[]") ?: "[]"
-        val arr = JSONArray(s)
+        val arr = try {
+            JSONArray(s)
+        } catch (e: JSONException) {
+            DataHealth.markCorrupt(app, "meds", e)
+            throw e
+        }
         val out = ArrayList<Med>(arr.length())
         for (i in 0 until arr.length()) {
             val o = arr.getJSONObject(i)
@@ -54,6 +61,9 @@ class MedStore(ctx: Context) {
     }
 
     private fun save(meds: List<Med>) {
+        // Refuse to overwrite once corruption has been detected — preserve the
+        // bad blob on disk so it can be inspected / recovered.
+        if (DataHealth.isCorrupt()) return
         val arr = JSONArray()
         meds.forEach {
             arr.put(
@@ -65,7 +75,9 @@ class MedStore(ctx: Context) {
                     .put("createdDay", it.createdDay)
             )
         }
-        prefs.edit().putString(KEY_MEDS, arr.toString()).apply()
+        // commit(): user-initiated add/edit/delete — worth a synchronous flush so the
+        // change survives if the process is killed immediately after.
+        prefs.edit().putString(KEY_MEDS, arr.toString()).commit()
     }
 
     companion object {
