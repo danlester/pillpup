@@ -17,7 +17,8 @@ import android.content.Intent
  */
 object ReminderScheduler {
     const val WINDOW_MS = 5 * 60_000L
-    const val SNOOZE_MS = 15 * 60_000L
+    const val SNOOZE_SHORT_MS = 15 * 60_000L
+    const val SNOOZE_LONG_MS = 60 * 60_000L
     const val FOREGROUND_REPOLL_MS = 5 * 60_000L
 
     private const val REQ_CHECK = 1

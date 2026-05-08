@@ -69,18 +69,23 @@ class HistoryStore(ctx: Context) {
     }
 
     /**
-     * Count of (med, day) pairs in [med.createdDay, today-1] with no taken/skipped record,
-     * plus the most-recent unresolved day (or null if backlog is empty).
-     * Walked from yesterday backwards so the first hit is the most recent.
+     * Count of (med, day) pairs in [max(med.createdDay, today-BACKLOG_WINDOW_DAYS), today-1]
+     * with no taken/skipped record, plus the most-recent unresolved day (or null if
+     * backlog is empty). Walked from yesterday backwards so the first hit is the most
+     * recent. Anything older than the window is quietly forgotten — the banner stops
+     * nagging the user about ancient missed doses, and the day-list past that horizon
+     * still works if they choose to navigate back manually.
      */
     fun computeBacklog(meds: List<Med>, today: String): BacklogResult {
         if (meds.isEmpty()) return BacklogResult(0, null)
+        val windowStart = Days.shift(today, -BACKLOG_WINDOW_DAYS)
         val earliestCreated = meds.minOf { it.createdDay }
+        val lowerBound = if (earliestCreated > windowStart) earliestCreated else windowStart
         val root = root()
         var count = 0
         var mostRecent: String? = null
         var day = Days.shift(today, -1)
-        while (day >= earliestCreated) {
+        while (day >= lowerBound) {
             val dayObj = root.optJSONObject(day)
             for (med in meds) {
                 if (med.createdDay > day) continue
@@ -134,5 +139,6 @@ class HistoryStore(ctx: Context) {
 
     companion object {
         private const val KEY_HISTORY = "history"
+        const val BACKLOG_WINDOW_DAYS = 30
     }
 }

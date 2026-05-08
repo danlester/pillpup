@@ -29,7 +29,10 @@ class ReminderReceiver : BroadcastReceiver() {
             ACTION_CHECK -> Engine.checkAndNotify(app)
             ACTION_SNOOZE -> {
                 val now = System.currentTimeMillis()
-                val until = now + ReminderScheduler.SNOOZE_MS
+                val durationMs = intent.getLongExtra(
+                    EXTRA_SNOOZE_MS, ReminderScheduler.SNOOZE_SHORT_MS
+                )
+                val until = now + durationMs
                 ReminderState(app).setSnooze(now, until)
                 Notifications.cancel(app)
                 ReminderScheduler.scheduleSnoozeCheck(app, until)
@@ -52,5 +55,6 @@ class ReminderReceiver : BroadcastReceiver() {
         const val ACTION_SNOOZE = "com.ideonate.pillpup.SNOOZE"
         const val ACTION_MIDNIGHT = "com.ideonate.pillpup.MIDNIGHT"
         const val EXTRA_MED_ID = "medId"
+        const val EXTRA_SNOOZE_MS = "snoozeMs"
     }
 }

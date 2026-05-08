@@ -40,12 +40,13 @@ object Notifications {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val snoozeIntent = Intent(app, ReminderReceiver::class.java).apply {
-            action = ReminderReceiver.ACTION_SNOOZE
-        }
-        val snoozePi = PendingIntent.getBroadcast(
-            app, 11, snoozeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        // Two snooze PendingIntents — distinct request codes AND distinct data URIs
+        // so PendingIntent.filterEquals keeps them separate (extras don't disambiguate).
+        val snoozeShortPi = snoozePendingIntent(
+            app, requestCode = 11, durationMs = ReminderScheduler.SNOOZE_SHORT_MS, tag = "short"
+        )
+        val snoozeLongPi = snoozePendingIntent(
+            app, requestCode = 14, durationMs = ReminderScheduler.SNOOZE_LONG_MS, tag = "long"
         )
 
         val title = app.getString(R.string.notif_title)
@@ -61,7 +62,8 @@ object Notifications {
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .addAction(0, app.getString(R.string.action_snooze), snoozePi)
+            .addAction(0, app.getString(R.string.action_snooze_short), snoozeShortPi)
+            .addAction(0, app.getString(R.string.action_snooze_long), snoozeLongPi)
             .addAction(0, app.getString(R.string.action_open), openPi)
             .build()
 
@@ -72,6 +74,23 @@ object Notifications {
     fun cancel(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         nm.cancel(NOTIFICATION_ID)
+    }
+
+    private fun snoozePendingIntent(
+        app: Context,
+        requestCode: Int,
+        durationMs: Long,
+        tag: String
+    ): PendingIntent {
+        val intent = Intent(app, ReminderReceiver::class.java).apply {
+            action = ReminderReceiver.ACTION_SNOOZE
+            putExtra(ReminderReceiver.EXTRA_SNOOZE_MS, durationMs)
+            data = android.net.Uri.parse("pillpup://snooze/$tag")
+        }
+        return PendingIntent.getBroadcast(
+            app, requestCode, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
     /**

@@ -9,7 +9,8 @@
         <item quantity="one">%d medication is due</item>
         <item quantity="other">%d medications are due</item>
     </plurals>
-    <string name="action_snooze">Snooze 15 min</string>
+    <string name="action_snooze_short">15 mins</string>
+    <string name="action_snooze_long">1 hour</string>
     <string name="action_open">Open</string>
 
     <string name="slide_to_take">Slide to take</string>

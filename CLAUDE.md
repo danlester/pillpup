@@ -16,8 +16,10 @@ without manual intervention.
 
 - **`AlarmManager.setWindow` with a 5-min flex window.** No
   `SCHEDULE_EXACT_ALARM` permission needed. The user explicitly chose
-  loose punctuality (up to 5 min late is fine, 15 min for snooze). If you
-  ever switch to exact alarms, that's a permission ramp the user has to
+  loose punctuality (up to 5 min late is fine on the original alarm; the
+  notification offers two snooze options — 15 mins and 1 hour — defined
+  by `ReminderScheduler.SNOOZE_SHORT_MS` / `SNOOZE_LONG_MS`). If you ever
+  switch to exact alarms, that's a permission ramp the user has to
   approve in system settings on Android 14+.
 - **Single notification channel at `IMPORTANCE_HIGH`, no
   `setBypassDnd(true)`.** Default channel behavior already respects DND
@@ -45,6 +47,14 @@ without manual intervention.
   a red banner above the list with the unresolved count
   (`HistoryStore.computeBacklog`); tap → jump to the most-recent
   unresolved day. Don't store missed.
+- **Backlog window is the last 30 days
+  (`HistoryStore.BACKLOG_WINDOW_DAYS`).** Anything older than that is
+  quietly forgotten — `computeBacklog` stops walking past `today - 30`,
+  so the banner doesn't nag about ancient missed doses. The day-list
+  past the horizon still renders normally if the user chooses to
+  navigate back manually; we just don't actively surface old gaps. Don't
+  uncap this without a reason — the cap is what keeps the banner
+  bearable for a long-running install.
 - **Timezone policy: literal local "named day".** `Days.today()` is
   `yyyy-MM-dd` in the system's current `TimeZone.getDefault()`. We don't
   pin a "home tz" or expose a setting. Crossing timezones can cause the
