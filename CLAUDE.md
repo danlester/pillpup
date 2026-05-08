@@ -64,8 +64,12 @@ without manual intervention.
   `BootReceiver` re-arms on `TIMEZONE_CHANGED` and additionally posts a
   one-off **"review your meds"** notification if backlog is non-zero
   after re-evaluation — so a traveler whose backlog spiked because the
-  date moved gets a single ping pointing them at the banner. Don't
-  introduce per-app tz state without a strong reason.
+  date moved gets a single ping pointing them at the banner. The same
+  review notification also fires on `BOOT_COMPLETED` /
+  `LOCKED_BOOT_COMPLETED` (but **not** on `MY_PACKAGE_REPLACED` or
+  `TIME_CHANGED` — the former would ping on every dev install, the
+  latter is too low-signal). Don't introduce per-app tz state without a
+  strong reason.
 - **`createdDay` per med.** Filters meds out of past-day views so newly-
   added meds don't appear retroactively. Today's view shows them
   immediately even if their scheduled time was earlier today.

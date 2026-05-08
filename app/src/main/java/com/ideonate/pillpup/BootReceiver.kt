@@ -15,7 +15,12 @@ class BootReceiver : BroadcastReceiver() {
                 try {
                     ReminderScheduler.rescheduleAll(context)
                     Engine.checkAndNotify(context)
-                    if (intent.action == Intent.ACTION_TIMEZONE_CHANGED) {
+                    val reviewActions = setOf(
+                        Intent.ACTION_TIMEZONE_CHANGED,
+                        Intent.ACTION_BOOT_COMPLETED,
+                        Intent.ACTION_LOCKED_BOOT_COMPLETED,
+                    )
+                    if (intent.action in reviewActions) {
                         val meds = MedStore(context).list()
                         val backlog = HistoryStore(context).computeBacklog(meds, Days.today())
                         Notifications.postBacklogReview(context, backlog.count)

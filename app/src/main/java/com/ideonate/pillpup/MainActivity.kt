@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
 
         adapter = MedDayAdapter(
             rows = emptyList(),
+            displayedDay = currentDay,
             onTake = { med ->
                 HistoryStore(this).set(currentDay, med.id, DoseStatus.TAKEN, System.currentTimeMillis())
                 Engine.onMedTakenOrSkipped(this, med.id)
@@ -109,7 +110,7 @@ class MainActivity : AppCompatActivity() {
         if (corruptDialog?.isShowing == true) return
         val c = DataHealth.corruption ?: return
         // Hide stale UI so the user isn't tempted to interact with it.
-        adapter.submit(emptyList())
+        adapter.submit(emptyList(), currentDay)
         binding.backlogBanner.visibility = android.view.View.GONE
         binding.empty.visibility = android.view.View.GONE
         val msg = getString(R.string.corrupt_dialog_msg, c.blob, c.message)
@@ -135,7 +136,7 @@ class MainActivity : AppCompatActivity() {
         val rows = medsForDay.map { med ->
             MedDayRow(med = med, record = history[med.id])
         }
-        adapter.submit(rows)
+        adapter.submit(rows, currentDay)
         binding.dayLabel.text = formatDayLabel(currentDay)
         binding.dayNext.isEnabled = currentDay < today
         binding.dayNext.alpha = if (currentDay < today) 1f else 0.3f
