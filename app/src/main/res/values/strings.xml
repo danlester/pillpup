@@ -22,7 +22,17 @@
 
     <string name="status_taken_at">✓ Taken %1$s</string>
     <string name="status_skipped_at">⊘ Skipped %1$s</string>
-    <string name="status_missed">✗ Missed</string>
+
+    <plurals name="backlog_count">
+        <item quantity="one">%d dose needs review</item>
+        <item quantity="other">%d doses need review</item>
+    </plurals>
+
+    <string name="notif_review_title">Timezone changed — review your meds</string>
+    <plurals name="notif_review_text">
+        <item quantity="one">%d past dose needs review.</item>
+        <item quantity="other">%d past doses need review.</item>
+    </plurals>
 
     <string name="day_today">Today</string>
     <string name="day_yesterday">Yesterday</string>
@@ -47,5 +57,5 @@
     <string name="add_med">Add medication</string>
     <string name="add_new">Add new</string>
     <string name="manage_meds">Medications</string>
-    <string name="empty_meds_manage">No medications here. Click settings to manage medications.</string>
+    <string name="empty_meds_manage">No medications here. Click settings cog to manage medications.</string>
 </resources>

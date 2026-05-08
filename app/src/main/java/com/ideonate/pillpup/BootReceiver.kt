@@ -14,6 +14,11 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_TIMEZONE_CHANGED -> {
                 ReminderScheduler.rescheduleAll(context)
                 Engine.checkAndNotify(context)
+                if (intent.action == Intent.ACTION_TIMEZONE_CHANGED) {
+                    val meds = MedStore(context).list()
+                    val backlog = HistoryStore(context).computeBacklog(meds, Days.today())
+                    Notifications.postBacklogReview(context, backlog.count)
+                }
             }
         }
     }

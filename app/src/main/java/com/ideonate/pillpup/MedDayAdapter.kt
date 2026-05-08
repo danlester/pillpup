@@ -12,9 +12,7 @@ import java.util.Locale
 
 data class MedDayRow(
     val med: Med,
-    val record: DoseRecord?,    // null = no record on this day
-    val isPastDay: Boolean,     // can't change records on past days
-    val isToday: Boolean
+    val record: DoseRecord?
 )
 
 class MedDayAdapter(
@@ -48,7 +46,7 @@ class MedDayAdapter(
         private val slider: SlideToTakeView = v.findViewById(R.id.slider)
         private val skipBtn: Button = v.findViewById(R.id.skipBtn)
         private val statusText: TextView = v.findViewById(R.id.statusText)
-        private val tapZone: View = v.findViewById(R.id.tapZone)
+        private val actionRow: View = v.findViewById(R.id.actionRow)
 
         fun bind(
             row: MedDayRow,
@@ -64,54 +62,25 @@ class MedDayAdapter(
             statusText.setOnClickListener(null)
             statusText.isClickable = false
 
-            val actionRow: View = itemView.findViewById(R.id.actionRow)
-
-            fun showActions() {
+            val rec = row.record
+            if (rec == null) {
                 actionRow.visibility = View.VISIBLE
                 statusText.visibility = View.GONE
-            }
-            fun showStatus(textRes: String, colorRes: Int, undoable: Boolean) {
+                slider.onTaken = { onTake(row.med) }
+                skipBtn.setOnClickListener { onSkip(row.med) }
+            } else {
                 actionRow.visibility = View.GONE
                 statusText.visibility = View.VISIBLE
+                val (textRes, colorRes) = when (rec.status) {
+                    DoseStatus.TAKEN ->
+                        ctx.getString(R.string.status_taken_at, formatClock(rec.atMillis)) to R.color.status_taken
+                    DoseStatus.SKIPPED ->
+                        ctx.getString(R.string.status_skipped_at, formatClock(rec.atMillis)) to R.color.status_skipped
+                }
                 statusText.text = textRes
                 statusText.setTextColor(ctx.getColor(colorRes))
-                if (undoable) {
-                    statusText.isClickable = true
-                    statusText.setOnClickListener { onUndo(row.med) }
-                }
-            }
-
-            when {
-                row.record?.status == DoseStatus.TAKEN -> {
-                    showStatus(
-                        ctx.getString(R.string.status_taken_at, formatClock(row.record.atMillis)),
-                        R.color.status_taken,
-                        undoable = true
-                    )
-                }
-                row.record?.status == DoseStatus.SKIPPED -> {
-                    showStatus(
-                        ctx.getString(R.string.status_skipped_at, formatClock(row.record.atMillis)),
-                        R.color.status_skipped,
-                        undoable = true
-                    )
-                }
-                row.isPastDay -> {
-                    showStatus(
-                        ctx.getString(R.string.status_missed),
-                        R.color.status_missed,
-                        undoable = false
-                    )
-                }
-                row.isToday -> {
-                    showActions()
-                    slider.onTaken = { onTake(row.med) }
-                    skipBtn.setOnClickListener { onSkip(row.med) }
-                }
-                else -> {
-                    actionRow.visibility = View.GONE
-                    statusText.visibility = View.GONE
-                }
+                statusText.isClickable = true
+                statusText.setOnClickListener { onUndo(row.med) }
             }
         }
 

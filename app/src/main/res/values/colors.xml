@@ -2,5 +2,5 @@
     <color name="accent">#FF6750A4</color>
     <color name="status_taken">#FF1B7F3A</color>
     <color name="status_skipped">#FFB58105</color>
-    <color name="status_missed">#FFB3261E</color>
+    <color name="backlog_warning">#FFB3261E</color>
 </resources>

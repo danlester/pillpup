@@ -91,17 +91,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun refresh() {
         val today = Days.today()
-        val isToday = currentDay == today
-        val isPast = currentDay < today
-        val meds = MedStore(this).list().filter { it.createdDay <= currentDay }
-        val history = HistoryStore(this).forDay(currentDay)
-        val rows = meds.map { med ->
-            MedDayRow(
-                med = med,
-                record = history[med.id],
-                isPastDay = isPast,
-                isToday = isToday
-            )
+        val historyStore = HistoryStore(this)
+        val allMeds = MedStore(this).list()
+        val medsForDay = allMeds.filter { it.createdDay <= currentDay }
+        val history = historyStore.forDay(currentDay)
+        val rows = medsForDay.map { med ->
+            MedDayRow(med = med, record = history[med.id])
         }
         adapter.submit(rows)
         binding.dayLabel.text = formatDayLabel(currentDay)
@@ -109,6 +104,21 @@ class MainActivity : AppCompatActivity() {
         binding.dayNext.alpha = if (currentDay < today) 1f else 0.3f
         binding.empty.visibility =
             if (rows.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+
+        val backlog = historyStore.computeBacklog(allMeds, today)
+        if (backlog.count > 0 && backlog.mostRecentDay != null) {
+            binding.backlogBanner.visibility = android.view.View.VISIBLE
+            binding.backlogBanner.text = resources.getQuantityString(
+                R.plurals.backlog_count, backlog.count, backlog.count
+            )
+            binding.backlogBanner.setOnClickListener {
+                currentDay = backlog.mostRecentDay
+                refresh()
+            }
+        } else {
+            binding.backlogBanner.visibility = android.view.View.GONE
+            binding.backlogBanner.setOnClickListener(null)
+        }
     }
 
     private fun formatDayLabel(day: String): String {

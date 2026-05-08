@@ -10,6 +10,8 @@ import org.json.JSONObject
  * On-disk shape:
  *   { "2026-05-08": { "<medId>": { "at": 1715175600000, "status": "taken" } } }
  */
+data class BacklogResult(val count: Int, val mostRecentDay: String?)
+
 class HistoryStore(ctx: Context) {
     private val prefs = ctx.applicationContext.getSharedPreferences("pillpup", Context.MODE_PRIVATE)
 
@@ -62,6 +64,35 @@ class HistoryStore(ctx: Context) {
         dayObj.remove(medId)
         if (dayObj.length() == 0) root.remove(day)
         save(root)
+    }
+
+    /**
+     * Count of (med, day) pairs in [med.createdDay, today-1] with no taken/skipped record,
+     * plus the most-recent unresolved day (or null if backlog is empty).
+     * Walked from yesterday backwards so the first hit is the most recent.
+     */
+    fun computeBacklog(meds: List<Med>, today: String): BacklogResult {
+        if (meds.isEmpty()) return BacklogResult(0, null)
+        val earliestCreated = meds.minOf { it.createdDay }
+        val root = root()
+        var count = 0
+        var mostRecent: String? = null
+        var day = Days.shift(today, -1)
+        while (day >= earliestCreated) {
+            val dayObj = root.optJSONObject(day)
+            for (med in meds) {
+                if (med.createdDay > day) continue
+                val rec = dayObj?.optJSONObject(med.id)
+                val status = rec?.optString("status")
+                val resolved = status == "taken" || status == "skipped"
+                if (!resolved) {
+                    count++
+                    if (mostRecent == null) mostRecent = day
+                }
+            }
+            day = Days.shift(day, -1)
+        }
+        return BacklogResult(count, mostRecent)
     }
 
     fun clearMed(medId: String) {

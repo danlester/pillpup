@@ -26,9 +26,11 @@ survives reboots / app kills / battery saver / DND.
 - **Today view.** Slide-to-take thumb + Skip button (with a confirm modal),
   per untaken med. Status rows show ✓ Taken / ⊘ Skipped with the time it
   was recorded; tap to undo (with a confirm modal).
-- **History.** Step ◀ / ▶ through past days. No record on a past day = ✗
-  Missed (skipped is *explicit*, distinct from missed). New meds don't
-  retroactively appear on prior days.
+- **History + backlog.** Step ◀ / ▶ through past days. Past-day rows
+  with no record are still interactive — you can backfill a take or
+  skip after the fact. A red banner above the list shows the count of
+  unresolved past doses; tapping it jumps to the most-recent unresolved
+  day. New meds don't retroactively appear on prior days.
 - **Edit/delete meds via cog.** The day view itself is read-only apart from
   take/skip/undo — adding and editing happens on a separate Medications
   screen.
@@ -114,8 +116,9 @@ uninstall-first.
    or take 5 min), a notification fires unless the app is open / DND is on.
 3. Drag the slide-to-take thumb on the row to record it as taken, or tap
    **Skip** for an explicit skip. Tap a recorded row to undo.
-4. ◀ / ▶ steps through previous days. Anything untaken from a finished day
-   shows as ✗ Missed.
+4. ◀ / ▶ steps through previous days. Untaken doses on past days remain
+   actionable (backfill take/skip), and the red banner at the top
+   surfaces how many remain.
 
 ## CI
 

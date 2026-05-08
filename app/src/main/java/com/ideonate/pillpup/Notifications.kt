@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 object Notifications {
     private const val CHANNEL_ID = "pillpup_reminders"
     private const val NOTIFICATION_ID = 1
+    private const val NOTIFICATION_ID_REVIEW = 2
 
     fun ensureChannel(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
@@ -70,5 +71,42 @@ object Notifications {
     fun cancel(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         nm.cancel(NOTIFICATION_ID)
+    }
+
+    /**
+     * One-off "review backlog" notification, fired when the system timezone
+     * changes and the user has unresolved past doses. Distinct ID so it
+     * coexists with a regular due-now notification.
+     */
+    fun postBacklogReview(context: Context, count: Int) {
+        if (count <= 0) return
+        val app = context.applicationContext
+        ensureChannel(app)
+
+        val openIntent = Intent(app, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val openPi = PendingIntent.getActivity(
+            app, 12, openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val title = app.getString(R.string.notif_review_title)
+        val text = app.resources.getQuantityString(
+            R.plurals.notif_review_text, count, count
+        )
+
+        val n = NotificationCompat.Builder(app, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notif)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setContentIntent(openPi)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        val nm = app.getSystemService(NotificationManager::class.java) ?: return
+        nm.notify(NOTIFICATION_ID_REVIEW, n)
     }
 }

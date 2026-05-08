@@ -38,8 +38,24 @@ without manual intervention.
   + `Engine.checkAndNotify`. Don't drop these.
 - **History is a JSON blob in SharedPreferences**
   (`{ day: { medId: { at, status } } }`). Same pattern as bttame's
-  `DeviceStore`. Skipped is recorded; missed is the *absence* of a record
-  on a past day (computed in the UI, not stored). Don't store missed.
+  `DeviceStore`. Skipped is recorded explicitly. "Missed" = absence of a
+  record on a past day, computed live; **treated as backlog, not a
+  terminal display state**. Past-day untaken rows are interactive (slide +
+  Skip) so the user can resolve them retroactively. `MainActivity` shows
+  a red banner above the list with the unresolved count
+  (`HistoryStore.computeBacklog`); tap → jump to the most-recent
+  unresolved day. Don't store missed.
+- **Timezone policy: literal local "named day".** `Days.today()` is
+  `yyyy-MM-dd` in the system's current `TimeZone.getDefault()`. We don't
+  pin a "home tz" or expose a setting. Crossing timezones can cause the
+  same calendar day to appear twice (long westward flight) or for a slot
+  to be skipped over (eastward), but both edges are absorbed by the
+  backlog workflow — the user just clears whatever's unresolved.
+  `BootReceiver` re-arms on `TIMEZONE_CHANGED` and additionally posts a
+  one-off **"review your meds"** notification if backlog is non-zero
+  after re-evaluation — so a traveler whose backlog spiked because the
+  date moved gets a single ping pointing them at the banner. Don't
+  introduce per-app tz state without a strong reason.
 - **`createdDay` per med.** Filters meds out of past-day views so newly-
   added meds don't appear retroactively. Today's view shows them
   immediately even if their scheduled time was earlier today.
@@ -79,8 +95,9 @@ without manual intervention.
   per med, and `dueSinceDay` for rollover.
 - `SlideToTakeView.kt` — custom view, ~140 lines. Drag thumb past 75% →
   fires `onTaken` and locks. No external library.
-- `MedDayAdapter.kt` — three row states: actions (today, untaken),
-  status text (taken/skipped/missed), or hidden (future, unreachable).
+- `MedDayAdapter.kt` — two row states: actions (no record yet, on today
+  *or* past) or status text (taken/skipped, tap to undo). No "missed"
+  row state — that's surfaced via the global banner instead.
 - `res/layout/activity_main.xml` + `res/layout-land/activity_main.xml` —
   portrait keeps a Toolbar + separate stepper row; landscape collapses
   title + stepper + cog into one row (no Toolbar widget; cog is a regular
@@ -122,6 +139,10 @@ you set it up.
 - **Cloud sync / multi-device.** Not asked for. JSON in prefs is
   enough.
 - **Storing "missed" explicitly.** Computed from "no record on a past
-  day". Cheaper and avoids backfill bugs.
+  day". Cheaper, avoids backfill bugs, and lets us treat missed as a
+  resolvable backlog rather than a terminal state.
+- **Pinning a "home" timezone or per-app tz setting.** Considered for
+  travel; rejected because the backlog workflow already absorbs the
+  edge cases without extra state or UI.
 - **Adding meds from the day view.** User specifically wanted the
   cog-gated separation.
