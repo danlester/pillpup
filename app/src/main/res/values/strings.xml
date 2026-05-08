@@ -1,0 +1,51 @@
+<resources>
+    <string name="app_name">PillPup</string>
+
+    <string name="channel_reminders">Medication reminders</string>
+    <string name="channel_reminders_desc">Notifies you when a dose is due. Respects Do Not Disturb.</string>
+
+    <string name="notif_title">Time to take your meds</string>
+    <plurals name="notif_text_due">
+        <item quantity="one">%d medication is due</item>
+        <item quantity="other">%d medications are due</item>
+    </plurals>
+    <string name="action_snooze">Snooze 15 min</string>
+    <string name="action_open">Open</string>
+
+    <string name="slide_to_take">Slide to take</string>
+    <string name="skip">Skip</string>
+    <string name="undo">Undo</string>
+    <string name="skip_confirm_title">Skip %1$s?</string>
+    <string name="skip_confirm_msg">It will be recorded as skipped.</string>
+    <string name="undo_confirm_title">Undo?</string>
+    <string name="undo_confirm_msg">Remove this record. You can mark it again.</string>
+
+    <string name="status_taken_at">✓ Taken %1$s</string>
+    <string name="status_skipped_at">⊘ Skipped %1$s</string>
+    <string name="status_missed">✗ Missed</string>
+
+    <string name="day_today">Today</string>
+    <string name="day_yesterday">Yesterday</string>
+    <string name="day_today_with_date">Today · %1$s</string>
+    <string name="day_yesterday_with_date">Yesterday · %1$s</string>
+    <string name="prev_day">Previous day</string>
+    <string name="next_day">Next day</string>
+
+    <string name="empty_meds">No medications yet — tap + to add one.</string>
+
+    <string name="title_add_med">Add medication</string>
+    <string name="title_edit_med">Edit medication</string>
+    <string name="name_label">Name</string>
+    <string name="name_hint">e.g. Vitamin D</string>
+    <string name="time_label">Reminder time</string>
+    <string name="err_name_required">Please enter a name</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="delete_confirm_title">Delete %1$s?</string>
+    <string name="delete_confirm_msg">All history for this medication will also be removed.</string>
+
+    <string name="add_med">Add medication</string>
+    <string name="add_new">Add new</string>
+    <string name="manage_meds">Medications</string>
+    <string name="empty_meds_manage">No medications here. Click settings to manage medications.</string>
+</resources>
