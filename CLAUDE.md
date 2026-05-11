@@ -15,7 +15,11 @@ without manual intervention.
 ## Key design choices (don't undo without thinking)
 
 - **`AlarmManager.setWindow` with a 5-min flex window.** No
-  `SCHEDULE_EXACT_ALARM` permission needed. The user explicitly chose
+  `SCHEDULE_EXACT_ALARM` permission needed. **Never pass `windowMs = 0`**
+  — Android silently promotes that to an exact alarm and the receiver
+  crashes with `SecurityException` on Android 14+. Every alarm path
+  (per-med, midnight, snooze-check, foreground re-poll) goes through
+  `WINDOW_MS`. The user explicitly chose
   loose punctuality (up to 5 min late is fine on the original alarm; the
   notification offers two snooze options — 15 mins and 1 hour — defined
   by `ReminderScheduler.SNOOZE_SHORT_MS` / `SNOOZE_LONG_MS`). If you ever
@@ -24,6 +28,14 @@ without manual intervention.
 - **Single notification channel at `IMPORTANCE_HIGH`, no
   `setBypassDnd(true)`.** Default channel behavior already respects DND
   per the user's spec. Don't add bypass-DND without asking.
+- **Swipe-away = short snooze.** The notification's `setDeleteIntent`
+  reuses the 15-min snooze `PendingIntent`, so swiping the heads-up
+  away (or Clear-all) is identical to tapping the "15 mins" action.
+  Without this the swipe was invisible to the app and a swiped reminder
+  could go silent for hours (until the next scheduled `MED_DUE`).
+  `setDeleteIntent` only fires on genuine user dismissal — programmatic
+  `cancel()` and tap-with-autoCancel do not trigger it, so the other
+  flows are unaffected.
 - **Snooze gate is a single global pair (`snoozeStartedAt`,
   `snoozeUntil`), not per-med.** A *new* med becoming due during a snooze
   breaks through; a med that was already due before the snooze does not

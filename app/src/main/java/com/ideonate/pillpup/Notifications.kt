@@ -59,6 +59,7 @@ object Notifications {
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(openPi)
+            .setDeleteIntent(snoozeShortPi)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

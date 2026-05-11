@@ -56,15 +56,18 @@ object ReminderScheduler {
     }
 
     fun scheduleSnoozeCheck(context: Context, atMillis: Long) =
-        scheduleCheck(context, atMillis, 0L)
+        scheduleCheck(context, atMillis)
 
     fun scheduleForegroundRepoll(context: Context, atMillis: Long) =
-        scheduleCheck(context, atMillis, WINDOW_MS)
+        scheduleCheck(context, atMillis)
 
-    private fun scheduleCheck(context: Context, atMillis: Long, windowMs: Long) {
+    // windowMs == 0 silently upgrades to an exact alarm, which needs
+    // SCHEDULE_EXACT_ALARM — a permission we deliberately don't request.
+    // Always pass WINDOW_MS so AlarmManager treats it as inexact.
+    private fun scheduleCheck(context: Context, atMillis: Long) {
         val app = context.applicationContext
         val am = app.getSystemService(AlarmManager::class.java) ?: return
-        am.setWindow(AlarmManager.RTC_WAKEUP, atMillis, windowMs, checkPendingIntent(app))
+        am.setWindow(AlarmManager.RTC_WAKEUP, atMillis, WINDOW_MS, checkPendingIntent(app))
     }
 
     fun cancelCheck(context: Context) {
