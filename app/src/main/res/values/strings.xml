@@ -62,8 +62,8 @@
 
     <string name="settings_title">Settings</string>
     <string name="preferences">Preferences</string>
-    <string name="evening_cutoff_title">Evening cutoff</string>
-    <string name="evening_cutoff_desc">A dose is marked as missed at the next cutoff after its scheduled time — banner and notification. Set 00:00 for the old midnight behaviour.</string>
+    <string name="evening_cutoff_title">Daily cutoff</string>
+    <string name="evening_cutoff_desc">A dose is marked as missed at the next cutoff after its scheduled time — banner and notification.</string>
 
     <string name="notif_corrupt_title">PillPup data error</string>
     <string name="notif_corrupt_text">Couldn\'t read your %1$s data. Open PillPup.</string>
