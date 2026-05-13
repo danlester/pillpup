@@ -79,7 +79,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openMeds() {
-        startActivity(Intent(this, MedsListActivity::class.java))
+        startActivity(Intent(this, SettingsActivity::class.java))
     }
 
     override fun onResume() {
@@ -143,7 +143,9 @@ class MainActivity : AppCompatActivity() {
         binding.empty.visibility =
             if (rows.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
 
-        val backlog = historyStore.computeBacklog(allMeds, today)
+        val backlog = historyStore.computeBacklog(
+            allMeds, today, Prefs(this).eveningCutoffMinutes()
+        )
         if (backlog.count > 0 && backlog.mostRecentDay != null) {
             binding.backlogBanner.visibility = android.view.View.VISIBLE
             binding.backlogBanner.text = resources.getQuantityString(

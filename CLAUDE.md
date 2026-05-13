@@ -113,10 +113,28 @@ without manual intervention.
 - **`minSdk = 31`.** `POST_NOTIFICATIONS` runtime permission was
   introduced in Android 13 (API 33), but we still target Pixel-class
   devices. Don't lower minSdk without re-checking the permission story.
-- **Cog → Medications screen for add/edit; the day view is read-only**
-  for editing. Only take/skip/undo are interactive on the day view. The
-  user explicitly asked for this separation — don't fold add/edit back
-  into the FAB.
+- **Cog → Settings (two tabs: Medications + Preferences).** The
+  Medications tab is the flat list + Add FAB → `AddEditMedActivity`. The
+  Preferences tab currently holds one row (evening cutoff). The day view
+  is read-only for editing — only take/skip/undo are interactive there.
+  The user explicitly asked for the cog-gated separation; don't fold
+  add/edit back into the FAB.
+- **Evening cutoff pref (`Prefs.eveningCutoffMinutes`).** Always set,
+  default 21:00. A dose is "missed" at the **next cutoff strictly after
+  its scheduled time** (`HistoryStore.missedAt`). So with a 07:00 med:
+  cutoff 21:00 → missed at 21:00 same day; cutoff 00:00 → missed at the
+  start of the next day (the original behaviour, preserved by setting
+  cutoff to 00:00); cutoff 02:00 → missed at 02:00 the following morning.
+  A med scheduled after the cutoff (e.g. 22:00 med with 21:00 cutoff)
+  rolls over to the next day's cutoff — a ~23h window, treated as
+  acceptable. `HistoryStore.computeBacklog` walks today + the prior 30
+  days and counts doses whose `missedAt` has passed. No "disabled" state:
+  setting cutoff to 00:00 is the disable. The cutoff alarm
+  (`ACTION_EVENING_CUTOFF`) is a daily one-shot armed via
+  `ReminderScheduler.scheduleEveningCutoff`; it re-arms itself after
+  firing, is set up alongside the per-med alarms in `rescheduleAll`, and
+  posts the "Review your meds" notification with the cutoff-aware
+  backlog count.
 - **Confirm modals on Skip and Undo.** The user wants both to require an
   explicit second tap. Don't silently auto-record.
 
@@ -124,8 +142,11 @@ without manual intervention.
 
 - `MainActivity.kt` — date stepper + day list. Toolbar menu (portrait) /
   inline cog button (landscape) opens the Medications screen.
-- `MedsListActivity.kt` — flat list of all meds, "Add new" FAB, tap a row
-  to edit.
+- `SettingsActivity.kt` — tabbed Settings screen. Tab 1: flat med list +
+  "Add new" FAB (taps → `AddEditMedActivity`). Tab 2: preferences (evening
+  cutoff). Tabs are a `TabLayout` toggling two sibling views by
+  visibility — no ViewPager2 dep.
+- `Prefs.kt` — user-prefs accessor over the shared `pillpup` prefs file.
 - `AddEditMedActivity.kt` — name + 24h `TimePicker`, Save / Delete-with-
   confirm.
 - `Engine.kt` — `checkAndNotify`, `onMedTakenOrSkipped`, `onMedUndone`,
@@ -135,7 +156,10 @@ without manual intervention.
   `medId.hashCode()` plus a unique `Uri` so `FLAG_UPDATE_CURRENT` swaps
   cleanly.
 - `ReminderReceiver.kt` — handles `MED_DUE`, `CHECK`, `SNOOZE`,
-  `MIDNIGHT`. Each `MED_DUE` re-arms the next day's slot.
+  `MIDNIGHT`, `EVENING_CUTOFF`. Each `MED_DUE` re-arms the next day's
+  slot. `EVENING_CUTOFF` re-arms itself for tomorrow and posts the
+  backlog-review notification (which now also covers today's unresolved
+  doses via the cutoff-aware `computeBacklog`).
 - `BootReceiver.kt` — re-schedule everything after boot / time changes.
 - `Notifications.kt` — channel + post/cancel. Snooze + Open actions.
 - `MedStore.kt` / `HistoryStore.kt` / `ReminderState.kt` — JSON-blob

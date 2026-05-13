@@ -37,6 +37,15 @@ class ReminderReceiver : BroadcastReceiver() {
                 Notifications.cancel(app)
                 ReminderScheduler.scheduleSnoozeCheck(app, until)
             }
+            ACTION_EVENING_CUTOFF -> {
+                // Re-arm for tomorrow. setWindow is one-shot.
+                ReminderScheduler.scheduleEveningCutoff(app)
+                val meds = MedStore(app).list()
+                val backlog = HistoryStore(app).computeBacklog(
+                    meds, Days.today(), Prefs(app).eveningCutoffMinutes()
+                )
+                Notifications.postBacklogReview(app, backlog.count)
+            }
             ACTION_MIDNIGHT -> {
                 val state = ReminderState(app)
                 state.clearAllDueSince()
@@ -54,6 +63,7 @@ class ReminderReceiver : BroadcastReceiver() {
         const val ACTION_CHECK = "com.ideonate.pillpup.CHECK"
         const val ACTION_SNOOZE = "com.ideonate.pillpup.SNOOZE"
         const val ACTION_MIDNIGHT = "com.ideonate.pillpup.MIDNIGHT"
+        const val ACTION_EVENING_CUTOFF = "com.ideonate.pillpup.EVENING_CUTOFF"
         const val EXTRA_MED_ID = "medId"
         const val EXTRA_SNOOZE_MS = "snoozeMs"
     }

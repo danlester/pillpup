@@ -69,14 +69,28 @@ class HistoryStore(ctx: Context) {
     }
 
     /**
-     * Count of (med, day) pairs in [max(med.createdDay, today-BACKLOG_WINDOW_DAYS), today-1]
-     * with no taken/skipped record, plus the most-recent unresolved day (or null if
-     * backlog is empty). Walked from yesterday backwards so the first hit is the most
-     * recent. Anything older than the window is quietly forgotten — the banner stops
-     * nagging the user about ancient missed doses, and the day-list past that horizon
-     * still works if they choose to navigate back manually.
+     * Counts unresolved (med, day) pairs that are *now considered missed*.
+     *
+     * A dose is missed at the next [cutoffMinutes]-of-day strictly after its
+     * scheduled time. So with cutoff 21:00 a 07:00 med misses at 21:00 same
+     * day; with cutoff 00:00 (midnight) it misses at the start of the next
+     * day — equivalent to the pre-cutoff behaviour. With cutoff 02:00 a
+     * 07:00 med misses at 02:00 the next day.
+     *
+     * The walk includes today (today's early meds can be missed in the
+     * evening) and goes back BACKLOG_WINDOW_DAYS so the banner doesn't
+     * nag about ancient gaps. The day-list past that horizon still works
+     * if the user navigates back manually.
+     *
+     * Returns the count and the most-recent (largest) day that contributes,
+     * so the banner can jump straight to it.
      */
-    fun computeBacklog(meds: List<Med>, today: String): BacklogResult {
+    fun computeBacklog(
+        meds: List<Med>,
+        today: String,
+        cutoffMinutes: Int,
+        now: Long = System.currentTimeMillis()
+    ): BacklogResult {
         if (meds.isEmpty()) return BacklogResult(0, null)
         val windowStart = Days.shift(today, -BACKLOG_WINDOW_DAYS)
         val earliestCreated = meds.minOf { it.createdDay }
@@ -84,11 +98,12 @@ class HistoryStore(ctx: Context) {
         val root = root()
         var count = 0
         var mostRecent: String? = null
-        var day = Days.shift(today, -1)
+        var day = today
         while (day >= lowerBound) {
             val dayObj = root.optJSONObject(day)
             for (med in meds) {
                 if (med.createdDay > day) continue
+                if (now < missedAt(day, med, cutoffMinutes)) continue
                 val rec = dayObj?.optJSONObject(med.id)
                 val status = rec?.optString("status")
                 val resolved = status == "taken" || status == "skipped"
@@ -100,6 +115,12 @@ class HistoryStore(ctx: Context) {
             day = Days.shift(day, -1)
         }
         return BacklogResult(count, mostRecent)
+    }
+
+    private fun missedAt(day: String, med: Med, cutoffMinutes: Int): Long {
+        val medMins = med.hour * 60 + med.minute
+        val onDay = if (cutoffMinutes > medMins) day else Days.shift(day, 1)
+        return Days.atTimeOnDay(onDay, cutoffMinutes / 60, cutoffMinutes % 60)
     }
 
     fun clearMed(medId: String) {

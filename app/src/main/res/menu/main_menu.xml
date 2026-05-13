@@ -4,6 +4,6 @@
     <item
         android:id="@+id/action_manage"
         android:icon="@drawable/ic_settings"
-        android:title="@string/manage_meds"
+        android:title="@string/settings_title"
         app:showAsAction="always" />
 </menu>

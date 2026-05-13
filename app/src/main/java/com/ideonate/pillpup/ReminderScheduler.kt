@@ -23,6 +23,7 @@ object ReminderScheduler {
 
     private const val REQ_CHECK = 1
     private const val REQ_MIDNIGHT = 2
+    private const val REQ_EVENING_CUTOFF = 3
 
     fun rescheduleAll(context: Context) {
         val app = context.applicationContext
@@ -30,6 +31,7 @@ object ReminderScheduler {
             scheduleNextFor(app, med)
         }
         scheduleMidnightRoll(app)
+        scheduleEveningCutoff(app)
     }
 
     fun scheduleNextFor(
@@ -76,6 +78,21 @@ object ReminderScheduler {
         am.cancel(checkPendingIntent(app))
     }
 
+    /**
+     * Arms a one-shot at today's cutoff time if it hasn't passed yet, otherwise
+     * tomorrow's. The receiver re-arms for the next day after firing.
+     */
+    fun scheduleEveningCutoff(context: Context, now: Long = System.currentTimeMillis()) {
+        val app = context.applicationContext
+        val am = app.getSystemService(AlarmManager::class.java) ?: return
+        val minutes = Prefs(app).eveningCutoffMinutes()
+        val today = Days.today()
+        val todayAt = Days.atTimeOnDay(today, minutes / 60, minutes % 60)
+        val target = if (todayAt > now) todayAt
+            else Days.atTimeOnDay(Days.shift(today, 1), minutes / 60, minutes % 60)
+        am.setWindow(AlarmManager.RTC_WAKEUP, target, WINDOW_MS, eveningCutoffPendingIntent(app))
+    }
+
     fun scheduleMidnightRoll(context: Context) {
         val app = context.applicationContext
         val am = app.getSystemService(AlarmManager::class.java) ?: return
@@ -102,6 +119,16 @@ object ReminderScheduler {
         }
         return PendingIntent.getBroadcast(
             context, REQ_CHECK, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun eveningCutoffPendingIntent(context: Context): PendingIntent {
+        val intent = Intent(context, ReminderReceiver::class.java).apply {
+            action = ReminderReceiver.ACTION_EVENING_CUTOFF
+        }
+        return PendingIntent.getBroadcast(
+            context, REQ_EVENING_CUTOFF, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }

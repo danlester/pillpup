@@ -23,14 +23,14 @@
         </activity>
 
         <activity
-            android:name=".MedsListActivity"
+            android:name=".SettingsActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
         <activity
             android:name=".AddEditMedActivity"
             android:exported="false"
-            android:parentActivityName=".MedsListActivity" />
+            android:parentActivityName=".SettingsActivity" />
 
         <receiver
             android:name=".ReminderReceiver"

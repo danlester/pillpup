@@ -22,7 +22,9 @@ class BootReceiver : BroadcastReceiver() {
                     )
                     if (intent.action in reviewActions) {
                         val meds = MedStore(context).list()
-                        val backlog = HistoryStore(context).computeBacklog(meds, Days.today())
+                        val backlog = HistoryStore(context).computeBacklog(
+                            meds, Days.today(), Prefs(context).eveningCutoffMinutes()
+                        )
                         Notifications.postBacklogReview(context, backlog.count)
                     }
                 } catch (e: org.json.JSONException) {

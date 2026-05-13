@@ -29,7 +29,7 @@
         <item quantity="other">%d doses need review</item>
     </plurals>
 
-    <string name="notif_review_title">Timezone changed — review your meds</string>
+    <string name="notif_review_title">Review your meds</string>
     <plurals name="notif_review_text">
         <item quantity="one">%d past dose needs review.</item>
         <item quantity="other">%d past doses need review.</item>
@@ -59,6 +59,11 @@
     <string name="add_new">Add new</string>
     <string name="manage_meds">Medications</string>
     <string name="empty_meds_manage">No medications here.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="preferences">Preferences</string>
+    <string name="evening_cutoff_title">Evening cutoff</string>
+    <string name="evening_cutoff_desc">A dose is marked as missed at the next cutoff after its scheduled time — banner and notification. Set 00:00 for the old midnight behaviour.</string>
 
     <string name="notif_corrupt_title">PillPup data error</string>
     <string name="notif_corrupt_text">Couldn\'t read your %1$s data. Open PillPup.</string>
