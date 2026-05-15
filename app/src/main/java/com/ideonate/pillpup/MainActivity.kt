@@ -77,9 +77,6 @@ class MainActivity : AppCompatActivity() {
         binding.snoozePickBtn.setOnClickListener {
             showSnoozePicker()
         }
-        binding.snoozeWakeBtn.setOnClickListener {
-            cancelSnooze()
-        }
 
         ensureNotificationPermission()
     }
@@ -239,15 +236,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.snoozePanel.visibility = View.VISIBLE
-        val state = ReminderState(this)
-        val snoozeUntil = state.snoozeUntil()
+        val snoozeUntil = ReminderState(this).snoozeUntil()
         if (now < snoozeUntil) {
             val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(snoozeUntil))
             binding.snoozeStatus.text = getString(R.string.snooze_panel_snoozed, time)
-            binding.snoozeWakeBtn.visibility = View.VISIBLE
         } else {
             binding.snoozeStatus.text = getString(R.string.snooze_panel_due)
-            binding.snoozeWakeBtn.visibility = View.GONE
         }
     }
 
@@ -260,14 +254,8 @@ class MainActivity : AppCompatActivity() {
         updateSnoozePanel()
     }
 
-    private fun cancelSnooze() {
-        ReminderState(this).clearSnooze()
-        ReminderScheduler.cancelCheck(this)
-        updateSnoozePanel()
-    }
-
     private fun showSnoozePicker() {
-        val now = Calendar.getInstance()
+        val (defaultHour, defaultMinute) = defaultPickerTime()
         TimePickerDialog(
             this,
             { _, hour, minute ->
@@ -286,12 +274,32 @@ class MainActivity : AppCompatActivity() {
                 ReminderScheduler.scheduleSnoozeCheck(this, target.timeInMillis)
                 updateSnoozePanel()
             },
-            now.get(Calendar.HOUR_OF_DAY),
-            now.get(Calendar.MINUTE),
+            defaultHour,
+            defaultMinute,
             false
         ).apply {
             setTitle(getString(R.string.snooze_time_picker_title))
         }.show()
+    }
+
+    private fun defaultPickerTime(): Pair<Int, Int> {
+        val slots = intArrayOf(0, 6, 9, 12, 15, 18, 21)
+        val minGap = 60 * 60 * 1000L
+        val now = System.currentTimeMillis()
+        val threshold = now + minGap
+        for (dayOffset in 0..1) {
+            for (hour in slots) {
+                val cal = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_MONTH, dayOffset)
+                    set(Calendar.HOUR_OF_DAY, hour)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                if (cal.timeInMillis >= threshold) return hour to 0
+            }
+        }
+        return 9 to 0
     }
 
     private fun ensureNotificationPermission() {

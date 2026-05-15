@@ -68,7 +68,6 @@
     <string name="snooze_panel_due">Meds are due</string>
     <string name="snooze_panel_snoozed">Snoozed until %1$s</string>
     <string name="snooze_pick_time">Pick time…</string>
-    <string name="snooze_wake_now">Wake now</string>
     <string name="snooze_time_picker_title">Remind me at…</string>
 
     <string name="notif_corrupt_title">PillPup data error</string>
