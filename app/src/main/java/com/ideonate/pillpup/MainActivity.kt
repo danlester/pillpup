@@ -1,12 +1,14 @@
 package com.ideonate.pillpup
 
 import android.Manifest
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -14,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ideonate.pillpup.databinding.ActivityMainBinding
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -63,6 +66,19 @@ class MainActivity : AppCompatActivity() {
         binding.dayLabel.setOnClickListener {
             currentDay = Days.today()
             refresh()
+        }
+
+        binding.snooze15Btn.setOnClickListener {
+            applySnooze(ReminderScheduler.SNOOZE_SHORT_MS)
+        }
+        binding.snooze1hBtn.setOnClickListener {
+            applySnooze(ReminderScheduler.SNOOZE_LONG_MS)
+        }
+        binding.snoozePickBtn.setOnClickListener {
+            showSnoozePicker()
+        }
+        binding.snoozeWakeBtn.setOnClickListener {
+            cancelSnooze()
         }
 
         ensureNotificationPermission()
@@ -159,6 +175,8 @@ class MainActivity : AppCompatActivity() {
             binding.backlogBanner.visibility = android.view.View.GONE
             binding.backlogBanner.setOnClickListener(null)
         }
+
+        updateSnoozePanel()
     }
 
     private fun formatDayLabel(day: String): String {
@@ -198,6 +216,82 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun updateSnoozePanel() {
+        val today = Days.today()
+        if (currentDay != today) {
+            binding.snoozePanel.visibility = View.GONE
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        val history = HistoryStore(this).forDay(today)
+        val hasDueMeds = MedStore(this).list().any { med ->
+            med.createdDay <= today &&
+            Days.atTimeOnDay(today, med.hour, med.minute) <= now &&
+            !history.containsKey(med.id)
+        }
+
+        if (!hasDueMeds) {
+            binding.snoozePanel.visibility = View.GONE
+            return
+        }
+
+        binding.snoozePanel.visibility = View.VISIBLE
+        val state = ReminderState(this)
+        val snoozeUntil = state.snoozeUntil()
+        if (now < snoozeUntil) {
+            val time = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(snoozeUntil))
+            binding.snoozeStatus.text = getString(R.string.snooze_panel_snoozed, time)
+            binding.snoozeWakeBtn.visibility = View.VISIBLE
+        } else {
+            binding.snoozeStatus.text = getString(R.string.snooze_panel_due)
+            binding.snoozeWakeBtn.visibility = View.GONE
+        }
+    }
+
+    private fun applySnooze(durationMs: Long) {
+        val now = System.currentTimeMillis()
+        val until = now + durationMs
+        ReminderState(this).setSnooze(now, until)
+        Notifications.cancel(this)
+        ReminderScheduler.scheduleSnoozeCheck(this, until)
+        updateSnoozePanel()
+    }
+
+    private fun cancelSnooze() {
+        ReminderState(this).clearSnooze()
+        ReminderScheduler.cancelCheck(this)
+        updateSnoozePanel()
+    }
+
+    private fun showSnoozePicker() {
+        val now = Calendar.getInstance()
+        TimePickerDialog(
+            this,
+            { _, hour, minute ->
+                val target = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hour)
+                    set(Calendar.MINUTE, minute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                    if (timeInMillis <= System.currentTimeMillis()) {
+                        add(Calendar.DAY_OF_MONTH, 1)
+                    }
+                }
+                val now2 = System.currentTimeMillis()
+                ReminderState(this).setSnooze(now2, target.timeInMillis)
+                Notifications.cancel(this)
+                ReminderScheduler.scheduleSnoozeCheck(this, target.timeInMillis)
+                updateSnoozePanel()
+            },
+            now.get(Calendar.HOUR_OF_DAY),
+            now.get(Calendar.MINUTE),
+            false
+        ).apply {
+            setTitle(getString(R.string.snooze_time_picker_title))
+        }.show()
     }
 
     private fun ensureNotificationPermission() {
