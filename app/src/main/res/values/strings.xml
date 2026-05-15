@@ -65,6 +65,12 @@
     <string name="evening_cutoff_title">Daily cutoff</string>
     <string name="evening_cutoff_desc">A dose is marked as missed at the next cutoff after its scheduled time — banner and notification.</string>
 
+    <string name="snooze_panel_due">Meds are due</string>
+    <string name="snooze_panel_snoozed">Snoozed until %1$s</string>
+    <string name="snooze_pick_time">Pick time…</string>
+    <string name="snooze_wake_now">Wake now</string>
+    <string name="snooze_time_picker_title">Remind me at…</string>
+
     <string name="notif_corrupt_title">PillPup data error</string>
     <string name="notif_corrupt_text">Couldn\'t read your %1$s data. Open PillPup.</string>
     <string name="notif_corrupt_bigtext">PillPup couldn\'t read its %1$s data: %2$s\n\nReminders are paused. Open the app for details.</string>
